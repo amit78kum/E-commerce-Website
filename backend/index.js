@@ -1,3 +1,4 @@
+const dotenv=require('dotenv').config();
 const express = require('express');
 const server = express();
 const mongoose = require('mongoose');
@@ -21,13 +22,13 @@ const ordersRouter = require('./routes/Order');
 const { User } = require('./model/User');
 const { isAuth, sanitizeUser, cookieExtractor } = require('./services/common');
 
-const SECRET_KEY = 'SECRET_KEY';
+
 
 // Webhook
 
 // TODO: we will capture actual order after deploying out server live on public URL
 
-const endpointSecret = "whsec_0e1456a83b60b01b3133d4dbe06afa98f384c2837645c364ee0d5382f6fa3ca2";
+const endpointSecret = process.env.ENDPOINT_SECRET;
 
 server.post('/webhook', express.raw({type: 'application/json'}), (request, response) => {
   const sig = request.headers['stripe-signature'];
@@ -61,7 +62,7 @@ server.post('/webhook', express.raw({type: 'application/json'}), (request, respo
 
 const opts = {};
 opts.jwtFromRequest = cookieExtractor;
-opts.secretOrKey = SECRET_KEY; // TODO: should not be in code;
+opts.secretOrKey = process.env.JWT_SECRET_KEY; // TODO: should not be in code;
 
 //middlewares
 
@@ -69,7 +70,7 @@ server.use(express.static('build'))
 server.use(cookieParser());
 server.use(
   session({
-    secret: 'keyboard cat',
+    secret: process.env.SESSION_KEY,
     resave: false, // don't save session if unmodified
     saveUninitialized: false, // don't create session until something stored
   })
@@ -116,8 +117,8 @@ passport.use(
           if (!crypto.timingSafeEqual(user.password, hashedPassword)) {
             return done(null, false, { message: 'invalid credentials' });
           }
-          const token = jwt.sign(sanitizeUser(user), SECRET_KEY);
-          done(null, {id:user.id, role:user.role}); // this lines sends to serializer
+          const token = jwt.sign(sanitizeUser(user), process.env.JWT_SECRET_KEY);
+          done(null, {id:user.id, role:user.role,token}); // this lines sends to serializer
         }
       );
     } catch (err) {
@@ -164,7 +165,7 @@ passport.deserializeUser(function (user, cb) {
 
 
 // This is your test secret API key.
-const stripe = require("stripe")('sk_test_51P0lENSImXCVgZZtMku1ptfYwSp77LTTEnPS8PuQIlgAUMd4y4pHV737p2SJdzlm23tAzqs24eofu8sFfNJeznP8008yWtfsI5');
+const stripe = require("stripe")(process.env.STRIPE_SERVER_KEY);
 
 
 server.post("/create-payment-intent", async (req, res) => {
@@ -193,10 +194,10 @@ server.post("/create-payment-intent", async (req, res) => {
 main().catch((err) => console.log(err));
 
 async function main() {
-  await mongoose.connect('mongodb://127.0.0.1:27017/ecommerce');
+  await mongoose.connect(process.env.MONGODB_URL);
   console.log('database connected');
 }
 
-server.listen(8080, () => {
+server.listen(process.env.PORT, () => {
   console.log('server started');
 });
