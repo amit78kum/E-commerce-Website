@@ -9,7 +9,7 @@ const initialState = {
 
 export const addToCartAsync = createAsyncThunk(
   'cart/addToCart',
-  async (item,alert) => {
+  async ({item,alert}) => {
     const response = await addToCart(item);
     // The value we return becomes the `fulfilled` action payload
     alert.success('Item Added to Cart');

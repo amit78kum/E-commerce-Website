@@ -16,7 +16,6 @@ exports.fetchAllProducts = async (req, res) => {
   // filter = {"category":["smartphone","laptops"]}
   // sort = {_sort:"price",_order="desc"}
   // pagination = {_page:1,_limit=10}
-  // TODO : we have to try with multiple category and brands after change in front-end
   let condition = {}
   if(!req.query.admin){
       condition.deleted = {$ne:true}
@@ -24,6 +23,8 @@ exports.fetchAllProducts = async (req, res) => {
   
   let query = Product.find(condition);
   let totalProductsQuery = Product.find(condition);
+
+  console.log(req.query.category);
 
   if (req.query.category) {
     query = query.find({ category: {$in:req.query.category.split(',')} });
@@ -35,7 +36,6 @@ exports.fetchAllProducts = async (req, res) => {
     query = query.find({ brand: {$in:req.query.brand.split(',')} });
     totalProductsQuery = totalProductsQuery.find({ brand: {$in:req.query.brand.split(',') }});
   }
-  //TODO : How to get sort on discounted Price not on Actual price
   if (req.query._sort && req.query._order) {
     query = query.sort({ [req.query._sort]: req.query._order });
   }
